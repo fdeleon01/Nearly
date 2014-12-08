@@ -864,6 +864,7 @@ nlapiLogExecution('debug', 'type', type);
                     actualRecord.setCurrentLineItemValue('item', 'quantity', cantidad.toFixed());
                     actualRecord.setCurrentLineItemValue('item', 'custcol_tt_igstatus', "Out Stock");
                     actualRecord.commitLineItem('item');
+                    globalStatus = false;
 
                 }
 
