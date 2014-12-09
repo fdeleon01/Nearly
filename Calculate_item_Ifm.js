@@ -306,14 +306,14 @@ nlapiLogExecution('debug', 'type', type);
                         ///****** Code to evalulate item is Amazon or Not**********//
                         var amazonFlag = false;
                        // nlapiLogExecution('debug', 'itemIsAmazon :' + itemIsAmazon + ',soIsAmazon :' + soIsAmazon, 'allowGeneralItem :' + allowGeneralItem);
-                        if (!itemIsAmazon && soIsAmazon && allowGeneralItem == false) {
+                        /*if (!itemIsAmazon && soIsAmazon && allowGeneralItem == false) {
                             if (thisParntItem.MBID == internalid || thisParntItem.IBID == internalid) {
                                 stockAvailavle = 0;
                                 amazonFlag = true;
                                 nlapiLogExecution('debug', 'stock value changed by Zero');
                             }
 
-                        }
+                        }*/
                        // nlapiLogExecution('debug', 'amazonFlag :' + amazonFlag, 'stockAvailavle :' + stockAvailavle);
                         //*********End code *******************/////
 
@@ -506,7 +506,7 @@ nlapiLogExecution('debug', 'type', type);
 
                            // nlapiLogExecution('debug', 'values are committed here');
                             actualRecord.setCurrentLineItemValue('item', 'custcol_tt_igstatus', "Not Eligible");
-                            actualRecord.setCurrentLineItemValue('item', 'quantity', '0');
+                            actualRecord.setCurrentLineItemValue('item', 'quantity', 0);
                             actualRecord.setFieldValue('custbody_so_amazontotalcarton', '');
                             actualRecord.commitLineItem('item');
 
@@ -518,13 +518,13 @@ nlapiLogExecution('debug', 'type', type);
 
 
                                 ///****** Code to evalulate item is Amazon or Not**********//
-                                if (!itemIsAmazon && soIsAmazon && allowGeneralItem == false) {
+                                /*if (!itemIsAmazon && soIsAmazon && allowGeneralItem == false) {
                                     if (thisParntItem.MBID == internalid || thisParntItem.IBID == internalid) {
                                         stockAvailavle = 0;
                                         nlapiLogExecution('debug', 'stock value changed by Zero');
                                     }
 
-                                }
+                                }*/
 
 
                                 if (isNaN(stockAvailavle)) {

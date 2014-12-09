@@ -1,33 +1,35 @@
-function loadItem(itemId) {
-    try {   
-        itemRecord = nlapiLoadRecord('inventoryitem', itemId);
-    } catch(SSS_RECORD_TYPE_MISMATCH) {     
-        try {   
-            itemRecord = nlapiLoadRecord('noninventoryitem', itemId);
-        } catch(SSS_RECORD_TYPE_MISMATCH) {     
-            try {
-                itemRecord = nlapiLoadRecord('kititem', itemId);
-            } catch(SSS_RECORD_TYPE_MISMATCH) {
-                try {
-                    itemRecord = nlapiLoadRecord('assemblyitem', itemId);
-                } catch(SSS_RECORD_TYPE_MISMATCH) {
-                    try {
-                        itemRecord = nlapiLoadRecord('serviceitem', itemId);
-                    } catch(SSS_RECORD_TYPE_MISMATCH) {
-                       try{
-                        itemRecord = nlapiLoadRecord('itemgroup', itemId);
-                       }catch(e){
-                            return "";
-                       }
-                    }
-                    nlapiXMLToPDF     }
-                }
-            }
-        }
+//var searchResult = new nlapiSearchRecord(null, 230, filters, null);
 
-        return itemRecord;
-    }
-    
+ var jsonArray=[];  
+ var jsonGroup = [];
+      var procItems=[];
+
+     var allResults = new nlapiSearchRecord(null, 233, null, null);
+
+  for(var i = 0; i < allResults.length; i++) {
+
+      var columnsSearch = allResults[i].getAllColumns();
+      var name=allResults[i].getValue(columnsSearch[0]);          
+    jsonGroup.push(name)
+
+}
+
+ var allResults = new nlapiSearchRecord(null, 230, null, null);
+    for(var i = 0; i < allResults.length; i++) {
+      var json = {};
+      var columnsSearch = allResults[i].getAllColumns();
+      json.internalid=allResults[i].getId();
+      json.itemid = allResults[i].getValue(columnsSearch[0]); 
+      json.memberitem = allResults[i].getText(columnsSearch[1]); 
+      json.memberitem2= allResults[i].getText(columnsSearch[2]); 
+      json.itemtype = allResults[i].getRecordType();      
+      json.componentName = allResults[i].getValue(columnsSearch[5]);      
+        json.sort = allResults[i].getValue(columnsSearch[3]);      
+
+    jsonArray.push(json)
+
+}
+
 var timeNow = new Date();
 timeNow = timeNow.toString();
 
@@ -40,52 +42,41 @@ try{
   var filters = [];
   var actualRecordId=nlapiGetRecordId();
 
-  var actualRecord = nlapiLoadRecord('itemreceipt', actualRecordId, {recordmode: 'dynamic'});
-  nlapiLogExecution('ERROR', 'Record Item Receipt','Charge');
-
+  var actualRecord = nlapiLoadRecord('itemreceipt', actualRecordId);
   var counterItems = actualRecord.getLineItemCount('item');
+  nlapiLogExecution('ERROR', 'actualRecordId','actualRecordId Script');
 
     
 for (var x = 1; x <= counterItems; x++) {
-      
-      var filters = [];
-       var typeItem = actualRecord.getLineItemValue('item', 'itemtype', x);      
-      var internalId = actualRecord.getLineItemText('item', 'item', x);
-       
-      //filter[0] = new nlobjSearchFilter('member', null, 'is', internalId);
- 
-      filters[0] = new nlobjSearchFilter('formulatext', null, 'is', internalId).setOr(true);
-      filters[0].setFormula('{memberitem.memberitem}');
-       filters[1] = new nlobjSearchFilter('formulatext', null, 'is', internalId).setOr(true);
-      filters[1].setFormula('{memberitem}');
-       filters[2] = new nlobjSearchFilter('itemid', null, 'is', internalId).setOr(true);
-       
-      var searchResult = new nlapiSearchRecord(null, 230, filters, null);
-
-      if(searchResult && searchResult.length > 0){
-
-           for(var i = searchResult.length-1; searchResult && i >=0; i--) {
-  
-              var internalId2 = searchResult[i].getId()
-              nlapiLogExecution('DEBUG', 'internalId2', internalId2);
-              
-              var typeItem = searchResult[i].getRecordType();
-              reviewItems(internalId2,typeItem);
-
-             if(typeItem == 'itemgroup'){
-                setTaInGroupitems(internalId2)
-
-             }
-              
-             
-            
-
-       }
 
 
+      var typeItem = actualRecord.getLineItemValue('item', 'itemtype', x);      
+      var itemName = actualRecord.getLineItemText('item', 'item', x);
+
+     
+
+
+      if(itemName != '' && itemName){
+
+      for (var xi = jsonArray.length-1; xi >=0; xi--) {
+    
+      if(jsonArray[xi].itemid==itemName || jsonArray[xi].memberitem==itemName || jsonArray[xi].memberitem2==itemName ){
+
+      var componentName = jsonArray[xi].componentName;
+
+      if(jsonArray[xi].sort==4){
+        componentName = jsonArray[xi].itemid;
+      }
+          if(procItems.indexOf(componentName)==-1){
+                      reviewSavedSearch(componentName);
+                      procItems.push(componentName);
+          } 
+          
       }
 
-
+      };
+    }
+     
   };
 
 
@@ -99,15 +90,13 @@ nlapiLogExecution('ERROR', 'Finish','Finish Script');
 }
 
 
-
-
-function reviewItems(internalId2,typeItem){
+function reviewItems(itemname,typeItem){
 
      var arrayItems = [];
      var filter = [];
 
 
-     filter.push(new nlobjSearchFilter('internalid', null, 'is', internalId2));
+     filter.push(new nlobjSearchFilter('itemid', null, 'is', itemname));
      
     
     var allResults = new nlapiSearchRecord(null, 117, filter, null);
@@ -124,44 +113,28 @@ function reviewItems(internalId2,typeItem){
       var atm = parseInt(allResults[i].getValue(columnsSearch[3]).replace(",",""));
 
       var ta = parseInt(allResults[i].getValue(columnsSearch[2]).replace(",",""));
-     
+      //var mtype = allResults[i].getValue(columnsSearch[5]);      
       
-     
+      var mtype = allResults[i].getValue(columnsSearch[6]);
+      var typeItem =returnTypeItem(mtype);
 
       if(typeItem == 'inventoryitem'){
 
           ta = parseInt(allResults[i].getValue(columnsSearch[4]).replace(",",""));
       }
      
-
-
-     
       if(isNaN(atm))atm = 0;
       if(isNaN(atu))atu = 0;
       if(isNaN(ta))ta = 0;
 
-      var filter = [];
-      filter[0] = new nlobjSearchFilter('internalid', null, 'is', internalId);
-      var searchResult = new nlapiSearchRecord(null, 109, filter, null);
-       
-
-
-
-        
-        //atu = atu - backOrder;
-        //atm = atm - backOrder;
-        
-         
-       
-        var totalAvailable = (atm + atu);
+  
         
         //nlapiLogExecution('ERROR', 'available on item search: ',totalAvailable); 
 
-        nlapiSubmitField(searchResult[0].getRecordType(),searchResult[0].getId(),'custitem4',timeNow,true); 
-        nlapiSubmitField(searchResult[0].getRecordType(),searchResult[0].getId(),'custitem_total_available',ta,true); 
-    
-        nlapiSubmitField(searchResult[0].getRecordType(),searchResult[0].getId(),'custitem_available_to_make',atm,true); 
-        nlapiSubmitField(searchResult[0].getRecordType(),searchResult[0].getId(),'custitem_available_to_use',atu,true); 
+        nlapiSubmitField(typeItem,internalId,'custitem4',timeNow,true); 
+        nlapiSubmitField(typeItem,internalId,'custitem_total_available',ta,true);
+        nlapiSubmitField(typeItem,internalId,'custitem_available_to_make',atm,true); 
+        nlapiSubmitField(typeItem,internalId,'custitem_available_to_use',atu,true); 
 
 
     }
@@ -171,8 +144,6 @@ function reviewItems(internalId2,typeItem){
 
 }
 
-
-
 function setTaInGroupitems(internalId2){
 
 nlapiLogExecution('ERROR', 'start: ','setTaInGroupitems function');
@@ -180,7 +151,7 @@ try{
 
 
 var filter = [];
-filter.push(new nlobjSearchFilter('internalid', null, 'is', internalId2));
+filter.push(new nlobjSearchFilter('name', null, 'is', internalId2));
 
 var searchResult = new nlapiSearchRecord(null, 223,filter,null);
 
@@ -190,41 +161,39 @@ if(searchResult.length > 0){
        
       var columnsSearch = searchResult[0].getAllColumns();
      
-      var atm = parseInt(searchResult[0].getValue(columnsSearch[2]).replace(",",""));      
-      var ta = atm;
+      var atu = parseInt(searchResult[0].getValue(columnsSearch[4]).replace(",",""));      
+      var ta = atu;
+      //var atu = searchResult[0].getValue(columnsSearch[3]); 
     
- 
-        nlapiSubmitField('itemgroup',internalId,'custitem_total_available',ta,true); 
-        nlapiSubmitField('itemgroup',internalId2,'custitem_available_to_use',0,true); 
-        nlapiSubmitField('itemgroup',internalId2,'custitem_available_to_make',atm,true); 
-        nlapiSubmitField('itemgroup',internalId2,'custitem4',timeNow,true); 
-   
-       
-      
-  
+     var internalId22 = searchResult[0].getValue(columnsSearch[1]);
 
-      
+        nlapiSubmitField('itemgroup',internalId22,'custitem_total_available',ta,true); 
+        nlapiSubmitField('itemgroup',internalId22,'custitem_available_to_use',atu,true); 
+        nlapiSubmitField('itemgroup',internalId22,'custitem_available_to_make',0,true); 
+        nlapiSubmitField('itemgroup',internalId22,'custitem4',timeNow,true); 
+   
 
 }else {
 
 
 var filter = [];
-filter.push(new nlobjSearchFilter('internalid', null, 'is', internalId2));
+filter.push(new nlobjSearchFilter('name', null, 'is', internalId2));
 
 
 var searchResult = new nlapiSearchRecord(null, 231,filter,null);
 
 
   var columnsSearch = searchResult[0].getAllColumns();
-  
+  var internalId22 = searchResult[0].getValue(columnsSearch[1]);
   var atm = searchResult[0].getValue(columnsSearch[2]);      
-  var ta = atm;
+  var ta = searchResult[0].getValue(columnsSearch[5]);
+  var atu = searchResult[0].getValue(columnsSearch[4]); 
     
  
-        nlapiSubmitField('itemgroup',internalId2,'custitem_total_available',ta,true); 
-        nlapiSubmitField('itemgroup',internalId2,'custitem_available_to_use',0,true); 
-        nlapiSubmitField('itemgroup',internalId2,'custitem_available_to_make',atm,true); 
-        nlapiSubmitField('itemgroup',internalId2,'custitem4',timeNow,true); 
+        nlapiSubmitField('itemgroup',internalId22,'custitem_total_available',ta,true); 
+        nlapiSubmitField('itemgroup',internalId22,'custitem_available_to_use',atu,true); 
+        nlapiSubmitField('itemgroup',internalId22,'custitem_available_to_make',atm,true); 
+        nlapiSubmitField('itemgroup',internalId22,'custitem4',timeNow,true); 
 
 
 }
@@ -248,3 +217,66 @@ retorno = 'inventoryitem'
 }
 return retorno;
 }
+
+
+function reviewSavedSearch(itemName){
+
+
+           for(var i = jsonArray.length-1; jsonArray && i >=0; i--) {
+
+ 
+      if(jsonArray[i].itemid==itemName || jsonArray[i].memberitem==itemName || jsonArray[i].memberitem2==itemName ){
+     
+               var itemInternalId = jsonArray[i].internalid           
+               var typeItem = jsonArray[i].itemtype
+              
+              if(jsonGroup.indexOf(itemName)>=0 || jsonArray[i].sort==4){
+
+              if(procItems.indexOf(itemName)==-1){
+
+               setTaInGroupitems(itemName);
+               procItems.push(itemName);
+
+                            }
+                  if(jsonArray[i].memberitemName && procItems.indexOf(jsonArray[i].memberitemName)==-1){
+
+                       setTaInGroupitems(jsonArray[i].memberitemName);
+                       procItems.push(jsonArray[i].memberitem);
+                      }
+
+                     if(jsonArray[i].itemid && procItems.indexOf(jsonArray[i].itemid)==-1){
+                     setTaInGroupitems(jsonArray[i].itemid);
+                     procItems.push(jsonArray[i].itemid);
+                     }
+
+             }else{
+              
+                if(procItems.indexOf(itemName)==-1){
+
+               reviewItems(itemName,typeItem);
+               procItems.push(itemName);
+
+                            }
+                  if(jsonArray[i].memberitemName && procItems.indexOf(jsonArray[i].memberitemName)==-1){
+
+                       reviewItems(jsonArray[i].memberitemName,typeItem);
+                       procItems.push(jsonArray[i].memberitem);
+                      }
+
+                     if(jsonArray[i].itemid && procItems.indexOf(jsonArray[i].itemid)==-1){
+                     reviewItems(jsonArray[i].itemid,typeItem);
+                     procItems.push(jsonArray[i].itemid);
+                     }
+
+              }
+
+         
+            
+       }
+
+
+      }
+}
+
+
+
