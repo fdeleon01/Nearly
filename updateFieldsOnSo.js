@@ -42,9 +42,9 @@ try{
   var filters = [];
   var actualRecordId=nlapiGetRecordId();
 
-  var actualRecord = nlapiLoadRecord('salesorder', actualRecordId);
+  var actualRecord =nlapiLoadRecord('salesorder', actualRecordId, {recordmode: 'dynamic'});
   var counterItems = actualRecord.getLineItemCount('item');
-  nlapiLogExecution('ERROR', 'actualRecordId','actualRecordId Script');
+  nlapiLogExecution('ERROR', 'Start','Start division qty');
 
     
 for (var x = 1; x <= counterItems; x++) {
@@ -80,10 +80,11 @@ for (var x = 1; x <= counterItems; x++) {
      
   };
 
-
-
-nlapiLogExecution('ERROR', 'Finish','Finish Script');
-
+  /*var params = [];
+               params['custscript1'] = actualRecordId;
+              
+               var status =nlapiScheduleScript('customscript270', 'customdeploy1', params)
+     nlapiLogExecution('ERROR', 'start schedule',status);*/
   }catch(e){
     nlapiLogExecution('ERROR', 'error',e);
   }
@@ -131,9 +132,7 @@ function reviewItems(itemname,typeItem){
       if(isNaN(atm))atm = 0;
       if(isNaN(atu))atu = 0;
       if(isNaN(ta))ta = 0;
-      if(ta<0)ta=0;
-      if(atu<0)atu=0;
-      if(atm<0)atm=0;
+      
   
         
         //nlapiLogExecution('ERROR', 'available on item search: ',totalAvailable); 
@@ -162,19 +161,19 @@ filter.push(new nlobjSearchFilter('name', null, 'is', internalId2));
 
 var searchResult = new nlapiSearchRecord(null, 223,filter,null);
 
-if(searchResult && searchResult.length > 0){
+
+
+if(searchResult.length > 0){
        
       var columnsSearch = searchResult[0].getAllColumns();
      
-      var atu = parseInt(searchResult[0].getValue(columnsSearch[4]).replace(",",""),10);      
+      var atu = parseInt(searchResult[0].getValue(columnsSearch[4]).replace(",",""));      
       var ta = atu;
-      if(ta<0)ta=0; 
-      if(atu<0)atu=0; 
       //var atu = searchResult[0].getValue(columnsSearch[3]); 
     
      var internalId22 = searchResult[0].getValue(columnsSearch[1]);
 
-        nlapiSubmitField('itemgroup',internalId22,'custitem_total_available',ta,true); 
+        nlapiSubmitField('itemgroup',internalId22,'custitem_total_available',atu,true); 
         nlapiSubmitField('itemgroup',internalId22,'custitem_available_to_use',atu,true); 
         nlapiSubmitField('itemgroup',internalId22,'custitem_available_to_make',0,true); 
         nlapiSubmitField('itemgroup',internalId22,'custitem4',timeNow,true); 
@@ -188,24 +187,23 @@ filter.push(new nlobjSearchFilter('name', null, 'is', internalId2));
 
 
 var searchResult = new nlapiSearchRecord(null, 231,filter,null);
+if(searchResult && searchResult.length > 0){
 
- if(searchResult && searchResult.length>0){
+
 
   var columnsSearch = searchResult[0].getAllColumns();
   var internalId22 = searchResult[0].getValue(columnsSearch[1]);
   var atm = searchResult[0].getValue(columnsSearch[2]);      
   var ta = searchResult[0].getValue(columnsSearch[5]);
   var atu = searchResult[0].getValue(columnsSearch[4]); 
-   if(ta<0)ta=0; 
-   if(atu<0)atu=0; 
-    if(atm<0)atm=0; 
+    
  
         nlapiSubmitField('itemgroup',internalId22,'custitem_total_available',ta,true); 
         nlapiSubmitField('itemgroup',internalId22,'custitem_available_to_use',atu,true); 
         nlapiSubmitField('itemgroup',internalId22,'custitem_available_to_make',atm,true); 
         nlapiSubmitField('itemgroup',internalId22,'custitem4',timeNow,true); 
-  }
 
+    }
 }
 
 }catch(e){
@@ -215,18 +213,7 @@ nlapiLogExecution('ERROR', 'finishGroup: ','group');
 
 }
 
-function returnTypeItem(type){
-var retorno = '';
 
-if(type == 'Assembly'){
-
-  retorno = 'assemblyitem';
-}else if(type == 'InvtPart'){
-
-retorno = 'inventoryitem'
-}
-return retorno;
-}
 
 
 function reviewSavedSearch(itemName){
@@ -287,3 +274,34 @@ function reviewSavedSearch(itemName){
 
       }
 }
+
+
+function returnTypeItem(type){
+  var retorno = '';
+
+  if(type == 'Assembly'){
+
+    retorno = 'assemblyitem';
+
+  }else if(type == 'InvtPart'){
+
+    retorno = 'inventoryitem';
+
+  }else if (type == 'Group') {
+
+    retorno = 'itemgroup';
+
+  };
+
+  return retorno;
+}
+
+function pausecomp(millis) 
+{
+var date = new Date();
+var curDate = null;
+
+do { curDate = new Date(); } 
+while(curDate-date < millis);
+} 
+
